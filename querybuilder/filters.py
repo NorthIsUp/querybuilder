@@ -59,7 +59,7 @@ class FilterMeta(type):
     def __new__(metacls, name, bases, attrs):
         cls = super(FilterMeta, metacls).__new__(metacls, name, bases, attrs)
 
-        for name, attr in attrs.iteritems():
+        for name, attr in attrs.items():
 
             if hasattr(attr, 'operator'):
                 # check for for the `operator` attribute that is set in Operator.handles
@@ -332,7 +332,7 @@ class TypedFilter(Filter):
             kwargs.setdefault('operators', tuple(self.OPERATORS))
 
         if self.OPTIONS is not NotImplemented:
-            for k, v in self.OPTIONS.iteritems():
+            for k, v in self.OPTIONS.items():
                 kwargs.setdefault(k, v)
 
         super(TypedFilter, self).__init__(*args, **kwargs)

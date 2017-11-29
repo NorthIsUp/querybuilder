@@ -21,12 +21,6 @@ setup_requirements = [
     'pytest-runner',
 ]
 
-test_requirements = [
-    'pytest',
-    'decorator',
-    'mock',
-]
-
 setup(
     name='querybuilder',
     version='0.1.0',
@@ -55,6 +49,5 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
     test_suite='tests',
-    tests_require=test_requirements,
     setup_requires=setup_requirements,
 )

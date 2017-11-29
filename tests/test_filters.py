@@ -243,8 +243,6 @@ class TestDoubleFilter(BaseFilter):
         (-3.0, 10),
         (1.0, 2),
         (3.0, 5),
-        (1.0, None),
-        (0.0, None),
         (1000000000, 100000000000),
         autoparam=True,
     )
@@ -275,8 +273,6 @@ class TestIntegerFilter(BaseFilter):
         (-3, 10),
         (1, 2),
         (3, 5),
-        (1, None),
-        (0, None),
         autoparam=True,
     )
     ternary_comparison_scenario = fixture(
@@ -306,8 +302,6 @@ class TestNumericFilter(BaseFilter):
         (-3, 10),
         (1, 2),
         (3, 5),
-        (1, None),
-        (0, None),
         autoparam=True,
     )
     ternary_comparison_scenario = fixture(
