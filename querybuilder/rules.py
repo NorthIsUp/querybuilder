@@ -70,11 +70,17 @@ class Validation(ToDictMixin):
             pass
 
 
+# Since you were wanting a better entry point, would it make more sense to have a `RulesEngine`
+# class or something similar? You'd pass the json to that and it'd handle making the rules as
+# necessary. Then this class doesn't need to worry about serder at all.
+# Not that much of an improvement, but at least it's a more obvious entry point.
 class Rule(object):
     def __init__(self, rule):
         '''
         Args:
+            What's the rule object? A dict?
             rule: The rule object
+            # Looks like these params have been removed
             operators: Enum of operators, this allows for adding custom operators
             inputs: Enum of inputs, this allows for adding custom inputs
             types: Enum of types, this allows for adding custom types
@@ -83,8 +89,9 @@ class Rule(object):
         self.is_group = False
         self.is_empty = False  # note that an empty rule evaluates as true
 
+        # Could you add some more documentation on what these 3 types of rules are?
         if rule.get('empty'):
-            # some rules
+            # some rules what?
             self.is_empty = True
         elif 'condition' and 'rules' in rule:
             self.is_group = True

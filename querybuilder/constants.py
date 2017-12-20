@@ -84,6 +84,9 @@ class Operators(str, Enum):
         f.operator = self
         return f
 
+
+# Does it make sense to just declare these in the class? At the very least, helps with PyCharm's
+# jump to definition feature
 Operators.unary_comparisons = frozenset({
     Operators.IS_NULL,
     Operators.IS_NOT_NULL
