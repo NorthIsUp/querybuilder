@@ -271,10 +271,12 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
     def not_equal(self, lop, rop):
         return not self.equal(lop, rop)
 
+    # Does this belong on the base class? This doesn't fit with scalars
     @Operators.IN.handles
     def _in(self, lop, rop):
         return lop in rop
 
+    # Does this belong on the base class? This doesn't fit with scalars
     @Operators.NOT_IN.handles
     def not_in(self, lop, rop):
         return not self._in(lop, rop)
@@ -306,6 +308,7 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
     def not_between(self, op, minop, maxop):
         return not self.between(op, minop, maxop)
 
+    # Does this belong on the base class? This doesn't fit with scalars
     @Operators.CONTAINS.handles
     def contains(self, lop, rop):
         return self._in(lop, rop)
@@ -320,6 +323,7 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
 
 
 class TypedFilter(Filter):
+    # Would it make sense to use abstract properties?
     TYPE = NotImplemented
     OPERATORS = NotImplemented
     OPTIONS = NotImplemented
@@ -328,6 +332,7 @@ class TypedFilter(Filter):
         kwargs.update(type=self.TYPE)
         assert self.TYPE is not NotImplemented, 'TYPE must be declared in the subclass'
 
+        # BUG: If self.OPERATORS
         if self.OPTIONS is not NotImplemented:
             kwargs.setdefault('operators', tuple(self.OPERATORS))
 
@@ -422,7 +427,6 @@ class DateFilter(TypedFilter):
     )
 
     # TODO add default validator
-
 
 class TimeFilter(TypedFilter):
     TYPE = Types.TIME
