@@ -22,7 +22,7 @@ setup_requirements = [
 ]
 
 setup(
-    name='querybuilder',
+    name='jqueryquerybuilder',
     version='0.1.0',
     description="Generator and Parser for the jQuery Query Builder library.",
     long_description=readme + '\n\n' + history,

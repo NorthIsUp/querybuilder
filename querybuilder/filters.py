@@ -200,11 +200,7 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
         self.vertical = vertical
         self.validation = validation
 
-        for op in operators:
-            if op not in Operators:
-                raise ValueError('operators must be in Operators')
-
-        self.operators = operators
+        self.operators = [Operators(op) for op in operators]  # cast strings to operator, this also validates
         self.plugin = plugin
         self.plugin_config = plugin_config
         self.data = data
@@ -328,7 +324,7 @@ class TypedFilter(Filter):
         kwargs.update(type=self.TYPE)
         assert self.TYPE is not NotImplemented, 'TYPE must be declared in the subclass'
 
-        if self.OPTIONS is not NotImplemented:
+        if self.OPERATORS is not NotImplemented:
             kwargs.setdefault('operators', tuple(self.OPERATORS))
 
         if self.OPTIONS is not NotImplemented:
@@ -407,6 +403,7 @@ class IntegerFilter(TypedFilter):
 class DoubleFilter(IntegerFilter):
     # this isn't a thing in python, but whatever
     TYPE = Types.DOUBLE
+
 
 # alias Numeric to Double, these are the same concept in python
 NumericFilter = DoubleFilter

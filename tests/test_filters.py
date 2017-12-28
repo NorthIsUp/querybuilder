@@ -3,11 +3,14 @@
 from __future__ import absolute_import
 
 # Standard Library
-from datetime import time, date, datetime
+from datetime import (
+    date,
+    datetime,
+    time,
+)
 
 # External Libraries
 import pytest
-from decorator import decorator
 
 # Project Library
 from querybuilder.constants import Operators
@@ -22,18 +25,6 @@ from querybuilder.filters import (
     TimeFilter,
 )
 from tests import fixture
-
-
-@decorator
-def op_skip(func, self, *args, **kwargs):
-    # functools.wraps does not mirror args like decorator.decorator does
-    # is necessary so that py.test fixtures still work
-    op_name = func.__name__[len('test_Operators_'):].upper()
-    op = getattr(Operators, op_name)
-    if op not in self.FILTER.OPERATORS:
-        pytest.skip('{} does not respond to {}'.format(self.FILTER, op))
-    else:
-        return func(self, *args, **kwargs)
 
 
 class BaseFilter(object):
@@ -58,16 +49,22 @@ class BaseFilter(object):
     def Filter(self):
         return self.FILTER()
 
+    @fixture(autouse=True)
+    def skip_if_not_applicable(self, request):
+        # this filter will skip the test if the filter doesn't respond to the operator being tested
+        op_name = request.node.originalname[len('test_Operators_'):].upper()
+        op = getattr(Operators, op_name)
+        if op not in self.FILTER.OPERATORS:
+            pytest.skip('{} does not respond to {}'.format(self.FILTER, op))
+
     ###########################################################################
     # unary comp
-    @op_skip
     def test_Operators_is_null(self, Filter, unary_comparison_scenario):
         op = unary_comparison_scenario
 
         expects = (op is None)
         assert Filter.is_null(op) == expects, '({op} is None)'.format(**locals())
 
-    @op_skip
     def test_Operators_is_not_null(self, Filter, unary_comparison_scenario):
         op = unary_comparison_scenario
 
@@ -76,42 +73,36 @@ class BaseFilter(object):
 
     ###########################################################################
     # binary comp
-    @op_skip
     def test_Operators_equal(self, Filter, binary_comparison_scenario):
         lop, rop = binary_comparison_scenario
 
         expects = (lop == rop)
         assert Filter.equal(lop, rop) == expects, '({lop} == {rop})'.format(**locals())
 
-    @op_skip
     def test_Operators_not_equal(self, Filter, binary_comparison_scenario):
         lop, rop = binary_comparison_scenario
 
         expects = (lop != rop)
         assert Filter.not_equal(lop, rop) == expects, '({lop} != {rop})'.format(**locals())
 
-    @op_skip
     def Operator_less(self, Filter, binary_comparison_scenario):
         lop, rop = binary_comparison_scenario
 
         expects = (lop < rop)
         assert Filter.less(lop, rop) == expects, '({lop} < {rop})'.format(**locals())
 
-    @op_skip
     def test_Operators_less_or_equal(self, Filter, binary_comparison_scenario):
         lop, rop = binary_comparison_scenario
 
         expects = (lop <= rop)
         assert Filter.less_or_equal(lop, rop) == expects, '({lop} <= {rop})'.format(**locals())
 
-    @op_skip
     def test_Operators_greater(self, Filter, binary_comparison_scenario):
         lop, rop = binary_comparison_scenario
 
         expects = (lop > rop)
         assert Filter.greater(lop, rop) == expects, '({lop} > {rop})'.format(**locals())
 
-    @op_skip
     def test_Operators_greater_or_equal(self, Filter, binary_comparison_scenario):
         lop, rop = binary_comparison_scenario
 
@@ -120,14 +111,12 @@ class BaseFilter(object):
 
     ###########################################################################
     # ternary comp
-    @op_skip
     def test_Operators_between(self, Filter, ternary_comparison_scenario):
         op, minop, maxop = ternary_comparison_scenario
 
         expects = (minop <= op <= maxop)
         assert Filter.between(op, minop, maxop) == expects, '({minop} <= {op} <= {maxop})'.format(**locals())
 
-    @op_skip
     def test_Operators_not_between(self, Filter, ternary_comparison_scenario):
         op, minop, maxop = ternary_comparison_scenario
 
@@ -136,42 +125,36 @@ class BaseFilter(object):
 
     ###########################################################################
     # collections
-    @op_skip
-    def Operator__in(self, Filter, collection_scenario):
+    def test_Operators_in(self, Filter, collection_scenario):
         lop, rop = collection_scenario
 
         expects = (lop in rop)
         assert Filter._in(lop, rop) == expects, '({lop} in {rop})'.format(**locals())
 
-    @op_skip
     def test_Operators_not_in(self, Filter, collection_scenario):
         lop, rop = collection_scenario
 
         expects = (lop not in rop)
         assert Filter.not_in(lop, rop) == expects, '({lop} not in {rop})'.format(**locals())
 
-    @op_skip
     def test_Operators_contains(self, Filter, collection_scenario):
         lop, rop = collection_scenario
 
         expects = (lop in rop)
         assert Filter.contains(lop, rop) == expects, '({lop} in {rop})'.format(**locals())
 
-    @op_skip
     def test_Operators_not_contains(self, Filter, collection_scenario):
         lop, rop = collection_scenario
 
         expects = (lop not in rop)
         assert Filter.not_contains(lop, rop) == expects, '({lop} not in {rop})'.format(**locals())
 
-    @op_skip
     def test_Operators_is_empty(self, Filter, collection_scenario):
         op = collection_scenario
 
         expects = (len(op) == 0)
         assert Filter.is_empty(op) == expects, '(len({op}) == 0)'.format(**locals())
 
-    @op_skip
     def test_Operators_is_not_empty(self, Filter, collection_scenario):
         op = collection_scenario
 
@@ -180,28 +163,24 @@ class BaseFilter(object):
 
     ###########################################################################
     # strings
-    @op_skip
     def test_Operators_ends_with(self, Filter, strings_scenario):
         lop, rop = strings_scenario
 
         expects = (lop.endswith(rop))
         assert Filter.ends_with(lop, rop) == expects, '({lop}.endswith({rop}))'.format(**locals())
 
-    @op_skip
     def test_Operators_not_ends_with(self, Filter, strings_scenario):
         lop, rop = strings_scenario
 
         expects = (not lop.endswith(rop))
         assert Filter.not_ends_with(lop, rop) == expects, '(not {lop}.endswith({rop}))'.format(**locals())
 
-    @op_skip
     def test_Operators_begins_with(self, Filter, strings_scenario):
         lop, rop = strings_scenario
 
         expects = (lop.startswith(rop))
         assert Filter.begins_with(lop, rop) == expects, '({lop}.startswith({rop}))'.format(**locals())
 
-    @op_skip
     def test_Operators_not_begins_with(self, Filter, strings_scenario):
         lop, rop = strings_scenario
 

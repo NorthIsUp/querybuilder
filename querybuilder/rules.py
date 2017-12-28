@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
+from __future__ import (
+    absolute_import,
+    print_function,
+)
 
 # Standard Library
 import json
-from datetime import (
-    date,
-    datetime,
-    time,
-)
-from decimal import Decimal
 from logging import getLogger
 
 # Project Library
@@ -23,6 +20,7 @@ from querybuilder.core import ToDictMixin
 logger = getLogger(__name__)
 
 __all__ = ()
+
 
 class Validation(ToDictMixin):
     '''
@@ -124,25 +122,31 @@ class Rule(object):
         Conditions.OR: any,
     }
 
-    def is_valid(self, filters, indent=0):
+    def is_valid(self, filters, indent=0, verbose=False):
         '''
         Traverse all the rules and return the result as lazily as possible
 
         Args:
             filters: An instance of a sublclass of Filters
             indent: information to pretty print log results
+            verbose: printing the rule output is often useful, this is a quick way to enable logging for just this function
         '''
         pad = ' ' * indent
         if self.is_group:
             # recurse and call is_valid for each rule in the list
-            logger.debug('%s%s', pad, self.python_conditions[self.condition].__name__)
+
+            log_args = '%s%s', pad, self.python_conditions[self.condition].__name__
+            print(log_args[0] % log_args[1:]) if verbose else logger.debug(*log_args)
+
             return self.python_conditions[self.condition](
-                rule.is_valid(filters, indent=indent + 2) for rule in self.rules
+                rule.is_valid(filters, indent=indent + 2, verbose=verbose) for rule in self.rules
             )
         elif self.is_empty:
             return True
         else:
             result, filter_operand = filters.run_filter_for_rule(self)
-            logger.debug('%s%s == %s', pad, self.__repr__(value=filter_operand), result)
-            return result
 
+            log_args = '%s%s == %s', pad, self.__repr__(value=filter_operand), result
+            print(log_args[0] % log_args[1:]) if verbose else logger.debug(*log_args)
+
+            return result
