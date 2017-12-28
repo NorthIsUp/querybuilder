@@ -3,8 +3,8 @@ jQuery Query Builder
 ====================
 
 
-.. image:: https://img.shields.io/pypi/v/querybuilder.svg
-        :target: https://pypi.python.org/pypi/querybuilder
+.. image:: https://img.shields.io/pypi/v/jqueryquerybuilder.svg
+        :target: https://pypi.python.org/pypi/jqueryquerybuilder
 
 .. image:: https://img.shields.io/travis/NorthIsUp/querybuilder.svg
         :target: https://travis-ci.org/NorthIsUp/querybuilder
