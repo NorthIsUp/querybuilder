@@ -1,13 +1,22 @@
 from __future__ import absolute_import
 
-# External Libraries
-from datetime import date, time, datetime
+# Standard Library
+import re
+from datetime import (
+    date,
+    datetime,
+    time,
+)
+from decimal import (
+    Context,
+    Decimal,
+)
 
+# External Libraries
 import six
 from cached_property import cached_property
 
 # Project Library
-from decimal import Decimal
 from querybuilder.constants import (
     Inputs,
     Operators,
@@ -15,6 +24,9 @@ from querybuilder.constants import (
 )
 from querybuilder.core import ToDictMixin
 
+
+class ValidationError(ValueError):
+    pass
 
 class Filters(object):
 
@@ -34,11 +46,15 @@ class Filters(object):
         # get the filter for the id specified in the rule
         filter = Filter._filter_registry[rule.id]
 
-        # get the value set in the rule
-        rule_operand = filter.python_value(rule.value)
-
         # get the value returned in the filter instance
         filter_operand = filter.func(self)
+
+        # check that the value is within the filter constraints
+        if not filter.validate(filter_operand):
+            return False, filter_operand
+
+        # get the value set in the rule
+        rule_operand = filter.python_value(rule.value)
 
         # get the operator we are going to test with
         operator_handler = filter.handler_for_operator(rule.operator)
@@ -58,6 +74,8 @@ class FilterMeta(type):
     '''
     def __new__(metacls, name, bases, attrs):
         cls = super(FilterMeta, metacls).__new__(metacls, name, bases, attrs)
+
+        _validation_functions = []
 
         for name, attr in attrs.items():
 
@@ -92,6 +110,8 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
 
     # per-filter class map of operator -> function
     _operator_handlers = {}
+
+    _validation_functions = frozenset()
 
     DICT_KEYS = ('id', 'type', 'field', 'label', 'description', 'optgroup', 'input', 'values', 'value_separator', 'default_value', 'input_event', 'size', 'rows', 'multiple', 'placeholder', 'vertical', 'validation', 'operators', 'plugin', 'plugin_config', 'data', 'valueSetter', 'valueGetter')
 
@@ -198,7 +218,7 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
         self.multiple = multiple
         self.placeholder = placeholder
         self.vertical = vertical
-        self.validation = validation
+        self.validation = dict(validation or {})  # ensure validation is a dict
 
         self.operators = [Operators(op) for op in operators]  # cast strings to operator, this also validates
         self.plugin = plugin
@@ -208,6 +228,13 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
         self.valueGetter = valueGetter
 
         self.func = None
+
+        self._validation_functions = frozenset(
+            getattr(self, func_name)
+            for func_name in dir(self)
+            if func_name.startswith('validate_') and callable(getattr(self, func_name))
+        )
+
 
     def __call__(self, func):
         self.func = func
@@ -256,6 +283,15 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
     def filter_value(cls, python_value):
         '''Convert the python representation of a value to one which is filter and json compatible'''
         return python_value
+
+    def validate(self, value):
+        if self._validation_functions:
+            return all(
+                f(value) is not False  # value must be false, not just falsy
+                for f in self._validation_functions
+            )
+
+        return True
 
     ###########################################################################
     # Default handlers for operators
@@ -361,6 +397,21 @@ class StringFilter(TypedFilter):
         | Operators.string_comparisons
     )
 
+    @cached_property
+    def validation_format(self):
+        fmt = self.validation.get('format')
+        if fmt is not None:
+            if fmt.startswith('/') and fmt.endswith('/'):
+                fmt = fmt[1:-1]
+            return re.compile(fmt)
+
+    def validate_format(self, value):
+        if self.validation_format is not None:
+            print self.validation_format.match(value)
+            return bool(self.validation_format.match(value))
+
+    ###########################################################################
+    # Default handlers for operators
     @Operators.NOT_CONTAINS.handles
     def not_contains(self, lop, rop):
         return not self.contains(lop, rop)
@@ -398,6 +449,23 @@ class IntegerFilter(TypedFilter):
         | Operators.binary_comparisons
         | Operators.ternary_comparisons
     )
+
+    def validate_min(self, value):
+        min = self.validation.get('min')
+        if min is not None:
+            print(value, min, value >= min)
+            return value >= Decimal(str(min))
+
+    def validate_max(self, value):
+        max = self.validation.get('max')
+        if max is not None:
+            return value <= Decimal(str(max))
+
+    def validate_step(self, value, _divmod=Context().divmod):
+        step = self.validation.get('step')
+        if step is not None:
+            _, remainder = _divmod(Decimal(str(value)), Decimal(str(step)))
+            return remainder == 0
 
 
 class DoubleFilter(IntegerFilter):

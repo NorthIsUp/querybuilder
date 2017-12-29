@@ -34,7 +34,7 @@ class SomeFilters(filters.Filters):
         placeholder='____-____-____',
         operators=['equal', 'not_equal'],
         validation={
-            'format': r'/ ^.{4} - .{4} - .{4}$/'
+            'format': '/^.{4}-.{4}-.{4}$/'
         }
     )
     def id(self):
@@ -85,55 +85,128 @@ class SomeFilters(filters.Filters):
         return self.item.price
 
 
-Scenario = namedtuple('Scenario', 'is_valid,item')
+Scenario = namedtuple('Scenario', 'is_valid,rule,item,reason')
+
+_name = 'hello'
+_category = 1
+_in_stock = True
+_not_in_stock = False
+_price = 10
+_id = 'abcd-1234-de56'
+
+PASS = True
+FAIL = False
+
+rule_1 = Rule({
+    "condition": "AND",
+    "rules": [
+        {
+            "id": "price",
+            "field": "price",
+            "type": "double",
+            "input": "number",
+            "operator": "less",
+            "value": "10.25"
+        },
+        {
+            "condition": "OR",
+            "rules": [
+                {
+                    "id": "category",
+                    "field": "category",
+                    "type": "integer",
+                    "input": "select",
+                    "operator": "equal",
+                    "value": "2"
+                },
+                {
+                    "id": "category",
+                    "field": "category",
+                    "type": "integer",
+                    "input": "select",
+                    "operator": "equal",
+                    "value": "1"
+                }
+            ]
+        }
+    ],
+    "valid": True
+})
+
+rule_2 = Rule({
+    "condition": "AND",
+    "rules": [
+        {
+            "condition": "OR",
+            "rules": [
+              {
+                  "id": "name",
+                  "field": "name",
+                  "type": "string",
+                  "input": "text",
+                  "operator": "equal",
+                  "value": "henry"
+              },
+              {
+                  "id": "id",
+                  "field": "id",
+                  "type": "string",
+                  "input": "text",
+                  "operator": "equal",
+                  "value": "1111-1111-1111"
+              },
+              {
+                  "id": "category",
+                  "field": "category",
+                  "type": "integer",
+                  "input": "select",
+                  "operator": "equal",
+                  "value": "4"
+              }
+              ]
+        },
+        {
+            "id": "in_stock",
+            "field": "in_stock",
+            "type": "integer",
+            "input": "radio",
+            "operator": "equal",
+            "value": "1"
+        }
+    ],
+    "valid": True
+})
+
 scenario = fixture(
     autoparam=True,
     params=(
-        Scenario(True, Item(name='hi', category=1, in_stock=True, price=10, id=10)),
-        Scenario(True, Item(name='hi', category=1, in_stock=True, price=10.24, id=10)),
-        Scenario(True, Item(name='hi', category=1, in_stock=True, price=10.249, id=10)),  # TODO: should be invalid due to rule validation
-        Scenario(False, Item(name='hi', category=1, in_stock=True, price=10.25, id=10)),
-        Scenario(True, Item(name='hi', category=1, in_stock=True, price=0, id=10)),
-        Scenario(False, Item(name='hi', category=1, in_stock=True, price=10.251, id=10)),  # TODO: should be invalid due to rule validation
-        Scenario(False, Item(name='hi', category=1, in_stock=True, price=-10, id=10)),
+        # rule1
+        Scenario(PASS, rule_1, Item(_name, _category, _in_stock, _price, _id), 'a-ok'),
+        Scenario(PASS, rule_1, Item(_name, _category, _in_stock, 10, _id), 'a-ok'),
+        Scenario(PASS, rule_1, Item(_name, _category, _in_stock, 10.24, _id), 'a-ok'),
+        Scenario(PASS, rule_1, Item(_name, _category, _in_stock, 0, _id), 'a-ok'),
+        Scenario(FAIL, rule_1, Item(_name, _category, _in_stock, 10.25, _id), '10.25 is not < 10.25'),
+        Scenario(FAIL, rule_1, Item(_name, _category, _in_stock, 10.249, _id), '10.249 is the wrong step'),
+        Scenario(FAIL, rule_1, Item(_name, _category, _in_stock, 10.251, _id), '10.251 is the wrong step'),
+        Scenario(FAIL, rule_1, Item(_name, _category, _in_stock, -1, _id), 'price of -1 is below min'),
+
+        # rule2
+        Scenario(FAIL, rule_2, Item(_name, _category, _not_in_stock, _price, _id), 'meets no conditions'),
+
+        Scenario(PASS, rule_2, Item(_name, _category, _in_stock, _price, '1111-1111-1111'), 'good id'),
+        Scenario(FAIL, rule_2, Item(_name, _category, _not_in_stock, _price, '1111-1111-1111'), 'good id, but not in stock'),
+        Scenario(FAIL, rule_2, Item(_name, _category, _not_in_stock, _price, '1111-1111-1112'), 'bad id'),
+        Scenario(FAIL, rule_2, Item(_name, _category, _not_in_stock, _price, '111111111111'), 'bad id'),
+
+        Scenario(PASS, rule_2, Item(_name, 4, _in_stock, _price, _id), 'category is tools'),
+        Scenario(FAIL, rule_2, Item(_name, 4, _not_in_stock, _price, _id), 'category is tools, but not in stock'),
+        Scenario(FAIL, rule_2, Item(_name, 5, _in_stock, _price, _id), 'category is not tools'),
+        Scenario(PASS, rule_2, Item('henry', _category, _in_stock, _price, _id), 'good name'),
+        Scenario(FAIL, rule_2, Item('bob ross', _category, _in_stock, _price, _id), 'bad name'),
     )
 )
 
+
 def test_a_rule(scenario):
-    rule = Rule({
-        "condition": "AND",
-        "rules": [
-            {
-                "id": "price",
-                "field": "price",
-                "type": "double",
-                "input": "number",
-                "operator": "less",
-                "value": "10.25"
-            },
-            {
-                "condition": "OR",
-                "rules": [
-                    {
-                        "id": "category",
-                        "field": "category",
-                        "type": "integer",
-                        "input": "select",
-                        "operator": "equal",
-                        "value": "2"
-                    },
-                    {
-                        "id": "category",
-                        "field": "category",
-                        "type": "integer",
-                        "input": "select",
-                        "operator": "equal",
-                        "value": "1"
-                    }
-                ]
-            }
-        ],
-        "valid": True
-    })
     filters = SomeFilters(item=scenario.item)
-    assert scenario.is_valid == rule.is_valid(filters, verbose=1)
+    assert scenario.is_valid == scenario.rule.is_valid(filters, verbose=1), scenario.reason
