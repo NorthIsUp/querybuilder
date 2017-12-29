@@ -25,9 +25,6 @@ from querybuilder.constants import (
 from querybuilder.core import ToDictMixin
 
 
-class ValidationError(ValueError):
-    pass
-
 class Filters(object):
 
     def run_filter_for_rule(self, rule):
@@ -74,8 +71,6 @@ class FilterMeta(type):
     '''
     def __new__(metacls, name, bases, attrs):
         cls = super(FilterMeta, metacls).__new__(metacls, name, bases, attrs)
-
-        _validation_functions = []
 
         for name, attr in attrs.items():
 
@@ -234,7 +229,6 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
             for func_name in dir(self)
             if func_name.startswith('validate_') and callable(getattr(self, func_name))
         )
-
 
     def __call__(self, func):
         self.func = func
