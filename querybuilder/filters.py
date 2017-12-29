@@ -401,7 +401,6 @@ class StringFilter(TypedFilter):
 
     def validate_format(self, value):
         if self.validation_format is not None:
-            print self.validation_format.match(value)
             return bool(self.validation_format.match(value))
 
     ###########################################################################
@@ -447,7 +446,6 @@ class IntegerFilter(TypedFilter):
     def validate_min(self, value):
         min = self.validation.get('min')
         if min is not None:
-            print(value, min, value >= min)
             return value >= Decimal(str(min))
 
     def validate_max(self, value):

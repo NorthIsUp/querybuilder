@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    print_function,
-)
+from __future__ import absolute_import
 
 # Standard Library
 import json
 from logging import getLogger
 
 # Project Library
+import sys
+
 from querybuilder.constants import (
     Conditions,
     Inputs,
@@ -136,7 +135,7 @@ class Rule(object):
             # recurse and call is_valid for each rule in the list
 
             log_args = '%s%s', pad, self.python_conditions[self.condition].__name__
-            print(log_args[0] % log_args[1:]) if verbose else logger.debug(*log_args)
+            sys.stderr.write(log_args[0] % log_args[1:] + '\n') if verbose else logger.debug(*log_args)
 
             return self.python_conditions[self.condition](
                 rule.is_valid(filters, indent=indent + 2, verbose=verbose) for rule in self.rules
@@ -147,6 +146,6 @@ class Rule(object):
             result, filter_operand = filters.run_filter_for_rule(self)
 
             log_args = '%s%s == %s', pad, self.__repr__(value=filter_operand), result
-            print(log_args[0] % log_args[1:]) if verbose else logger.debug(*log_args)
+            sys.stderr.write(log_args[0] % log_args[1:] + '\n') if verbose else logger.debug(*log_args)
 
             return result

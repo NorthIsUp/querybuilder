@@ -209,4 +209,4 @@ scenario = fixture(
 
 def test_a_rule(scenario):
     filters = SomeFilters(item=scenario.item)
-    assert scenario.is_valid == scenario.rule.is_valid(filters, verbose=1), scenario.reason
+    assert scenario.is_valid == scenario.rule.is_valid(filters, verbose=True), scenario.reason
