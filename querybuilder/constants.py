@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class Conditions(str, Enum):
+class Condition(str, Enum):
     '''
     The available ways to do boolean combinations.
     '''
@@ -12,7 +12,7 @@ class Conditions(str, Enum):
     OR = 'OR'
 
 
-class Inputs(str, Enum):
+class Input(str, Enum):
     '''
     The types of input widgets available to the jQQB library.
     '''
@@ -26,7 +26,7 @@ class Inputs(str, Enum):
     SELECT = 'select'
 
 
-class Types(str, Enum):
+class Type(str, Enum):
     '''
     The types that a filter value can be
     '''
@@ -41,9 +41,9 @@ class Types(str, Enum):
     BOOLEAN = 'boolean'
 
 
-class Operators(str, Enum):
+class Operator(str, Enum):
     '''
-    Operators supported by default in jQQB
+    Operator supported by default in jQQB
     '''
     # TODO make enums expandable when using plugins
 
@@ -84,37 +84,37 @@ class Operators(str, Enum):
         f.operator = self
         return f
 
-Operators.unary_comparisons = frozenset({
-    Operators.IS_NULL,
-    Operators.IS_NOT_NULL
+Operator.unary_comparisons = frozenset({
+    Operator.IS_NULL,
+    Operator.IS_NOT_NULL
 })
 
-Operators.binary_comparisons = frozenset({
-    Operators.EQUAL,
-    Operators.NOT_EQUAL,
-    Operators.LESS,
-    Operators.LESS_OR_EQUAL,
-    Operators.GREATER,
-    Operators.GREATER_OR_EQUAL,
+Operator.binary_comparisons = frozenset({
+    Operator.EQUAL,
+    Operator.NOT_EQUAL,
+    Operator.LESS,
+    Operator.LESS_OR_EQUAL,
+    Operator.GREATER,
+    Operator.GREATER_OR_EQUAL,
 })
 
-Operators.ternary_comparisons = frozenset({
-    Operators.BETWEEN,
-    Operators.NOT_BETWEEN,
+Operator.ternary_comparisons = frozenset({
+    Operator.BETWEEN,
+    Operator.NOT_BETWEEN,
 })
 
-Operators.string_comparisons = frozenset({
-    Operators.BEGINS_WITH,
-    Operators.NOT_BEGINS_WITH,
-    Operators.ENDS_WITH,
-    Operators.NOT_ENDS_WITH,
+Operator.string_comparisons = frozenset({
+    Operator.BEGINS_WITH,
+    Operator.NOT_BEGINS_WITH,
+    Operator.ENDS_WITH,
+    Operator.NOT_ENDS_WITH,
 })
 
-Operators.collection_comparisons = frozenset({
-    Operators.IN,
-    Operators.NOT_IN,
-    Operators.IS_EMPTY,
-    Operators.IS_NOT_EMPTY,
-    Operators.CONTAINS,
-    Operators.NOT_CONTAINS,
+Operator.collection_comparisons = frozenset({
+    Operator.IN,
+    Operator.NOT_IN,
+    Operator.IS_EMPTY,
+    Operator.IS_NOT_EMPTY,
+    Operator.CONTAINS,
+    Operator.NOT_CONTAINS,
 })

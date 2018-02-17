@@ -18,9 +18,9 @@ from cached_property import cached_property
 
 # Project Library
 from querybuilder.constants import (
-    Inputs,
-    Operators,
-    Types,
+    Input,
+    Operator,
+    Type,
 )
 from querybuilder.core import ToDictMixin
 
@@ -150,11 +150,11 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
                 Label used to display the filter. It can be simple string or a map for localization.
             description (str):
                 Detailed description for display as help text.
-            type (str or Types):
-                Type of the field. Available types are in `Types`
+            type (str or Type):
+                Type of the field. Available types are in `Type`
             optgroup (str):
                 Group name to group this filter with
-            input (str or Inputs):
+            input (str or Input):
                 Type of input used. Available inputs are in `Inputs`
             values ([Values]):
                 Required for `radio` and `checkbox` inputs. Generally needed for select inputs.
@@ -164,7 +164,7 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
                 The default value.
             validation ([Validation]):
                 Object of options for rule validation. See the `Validation` class.
-            operators ([Operators)]):
+            operators ([Operator)]):
                 Array of operators types to use for this filter. If empty the filter will use all applicable operators.
             data (dict):
                 Additional data not used by QueryBuilder but that will be added to the output rules object. Use this to store any functional data you need.
@@ -194,15 +194,15 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
 
         '''
         self.id = id
-        self.type = Types(type) if type else type
+        self.type = Type(type) if type else type
         self.field = field
         self.label = label
         self.description = description
         self.optgroup = optgroup
-        self.input = Inputs(input) if input else input
+        self.input = Input(input) if input else input
 
         self.values = values
-        if self.input in (Inputs.CHECKBOX, Inputs.RADIO) and not self.values:
+        if self.input in (Input.CHECKBOX, Input.RADIO) and not self.values:
             raise ValueError('values are required when using input %s' % self.input)
 
         self.value_separator = value_separator
@@ -215,7 +215,7 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
         self.vertical = vertical
         self.validation = dict(validation or {})  # ensure validation is a dict
 
-        self.operators = [Operators(op) for op in operators]  # cast strings to operator, this also validates
+        self.operators = [Operator(op) for op in operators]  # cast strings to operator, this also validates
         self.plugin = plugin
         self.plugin_config = plugin_config
         self.data = data
@@ -255,13 +255,13 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
 
     # how to convert a rule's type to a python type
     _python_types = {
-        Types.STRING: str,  # TODO validate these converters
-        Types.INTEGER: int,  # TODO validate these converters
-        Types.DOUBLE: Decimal,  # TODO validate these converters
-        Types.DATE: date,  # TODO validate these converters
-        Types.TIME: time,  # TODO validate these converters
-        Types.DATETIME: datetime,  # TODO validate these converters
-        Types.BOOLEAN: lambda x: bool(int(x) if x.isdigit() else (1 if x == 'true' else 0))
+        Type.STRING: str,  # TODO validate these converters
+        Type.INTEGER: int,  # TODO validate these converters
+        Type.DOUBLE: Decimal,  # TODO validate these converters
+        Type.DATE: date,  # TODO validate these converters
+        Type.TIME: time,  # TODO validate these converters
+        Type.DATETIME: datetime,  # TODO validate these converters
+        Type.BOOLEAN: lambda x: bool(int(x) if x.isdigit() else (1 if x == 'true' else 0))
     }
 
     def python_value(self, filter_value):
@@ -289,58 +289,58 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
 
     ###########################################################################
     # Default handlers for operators
-    @Operators.EQUAL.handles
+    @Operator.EQUAL.handles
     def equal(self, lop, rop):
         return lop == rop
 
-    @Operators.NOT_EQUAL.handles
+    @Operator.NOT_EQUAL.handles
     def not_equal(self, lop, rop):
         return not self.equal(lop, rop)
 
-    @Operators.IN.handles
+    @Operator.IN.handles
     def _in(self, lop, rop):
         return lop in rop
 
-    @Operators.NOT_IN.handles
+    @Operator.NOT_IN.handles
     def not_in(self, lop, rop):
         return not self._in(lop, rop)
 
-    @Operators.LESS.handles
+    @Operator.LESS.handles
     def less(self, lop, rop):
         return lop < rop
 
-    @Operators.LESS_OR_EQUAL.handles
+    @Operator.LESS_OR_EQUAL.handles
     def less_or_equal(self, lop, rop):
         return self.less(lop, rop) or self.equal(lop, rop)
 
-    @Operators.GREATER.handles
+    @Operator.GREATER.handles
     def greater(self, lop, rop):
         return not self.less_or_equal(lop, rop)
 
-    @Operators.GREATER_OR_EQUAL.handles
+    @Operator.GREATER_OR_EQUAL.handles
     def greater_or_equal(self, lop, rop):
         return self.greater(lop, rop) or self.equal(lop, rop)
 
-    @Operators.BETWEEN.handles
+    @Operator.BETWEEN.handles
     def between(self, op, minop, maxop):
         '''
         minop <= op <= maxop
         '''
         return self.less_or_equal(minop, op) and self.less_or_equal(op, maxop)
 
-    @Operators.NOT_BETWEEN.handles
+    @Operator.NOT_BETWEEN.handles
     def not_between(self, op, minop, maxop):
         return not self.between(op, minop, maxop)
 
-    @Operators.CONTAINS.handles
+    @Operator.CONTAINS.handles
     def contains(self, lop, rop):
         return self._in(lop, rop)
 
-    @Operators.IS_NULL.handles
+    @Operator.IS_NULL.handles
     def is_null(self, op):
         return op is None
 
-    @Operators.IS_NOT_NULL.handles
+    @Operator.IS_NOT_NULL.handles
     def is_not_null(self, op):
         return not self.is_null(op)
 
@@ -365,30 +365,30 @@ class TypedFilter(Filter):
 
 
 class BooleanFilter(TypedFilter):
-    TYPE = Types.BOOLEAN
+    TYPE = Type.BOOLEAN
 
     OPERATORS = [
-        Operators.EQUAL,
-        Operators.NOT_EQUAL,
-        Operators.IS_NULL,
-        Operators.IS_NOT_NULL,
+        Operator.EQUAL,
+        Operator.NOT_EQUAL,
+        Operator.IS_NULL,
+        Operator.IS_NOT_NULL,
     ]
 
     OPTIONS = {
-        'input': Inputs.RADIO,
+        'input': Input.RADIO,
         'values': ({1: 'Is True'}, {0: 'Is False'}),
     }
 
 
 class StringFilter(TypedFilter):
-    TYPE = Types.STRING
+    TYPE = Type.STRING
 
     OPERATORS = (
-        Operators.unary_comparisons
-        | Operators.binary_comparisons
-        | Operators.ternary_comparisons
-        | Operators.collection_comparisons
-        | Operators.string_comparisons
+        Operator.unary_comparisons
+        | Operator.binary_comparisons
+        | Operator.ternary_comparisons
+        | Operator.collection_comparisons
+        | Operator.string_comparisons
     )
 
     @cached_property
@@ -405,42 +405,42 @@ class StringFilter(TypedFilter):
 
     ###########################################################################
     # Default handlers for operators
-    @Operators.NOT_CONTAINS.handles
+    @Operator.NOT_CONTAINS.handles
     def not_contains(self, lop, rop):
         return not self.contains(lop, rop)
 
-    @Operators.BEGINS_WITH.handles
+    @Operator.BEGINS_WITH.handles
     def begins_with(self, lop, rop):
         return lop.startswith(rop)
 
-    @Operators.NOT_BEGINS_WITH.handles
+    @Operator.NOT_BEGINS_WITH.handles
     def not_begins_with(self, lop, rop):
         return not lop.startswith(rop)
 
-    @Operators.ENDS_WITH.handles
+    @Operator.ENDS_WITH.handles
     def ends_with(self, lop, rop):
         return lop.endswith(rop)
 
-    @Operators.NOT_ENDS_WITH.handles
+    @Operator.NOT_ENDS_WITH.handles
     def not_ends_with(self, lop, rop):
         return not lop.endswith(rop)
 
-    @Operators.IS_EMPTY.handles
+    @Operator.IS_EMPTY.handles
     def is_empty(self, op):
         return len(op) == 0
 
-    @Operators.IS_NOT_EMPTY.handles
+    @Operator.IS_NOT_EMPTY.handles
     def is_not_empty(self, op):
         return not self.is_empty(op)
 
 
 class IntegerFilter(TypedFilter):
-    TYPE = Types.INTEGER
+    TYPE = Type.INTEGER
 
     OPERATORS = (
-        Operators.unary_comparisons
-        | Operators.binary_comparisons
-        | Operators.ternary_comparisons
+        Operator.unary_comparisons
+        | Operator.binary_comparisons
+        | Operator.ternary_comparisons
     )
 
     def validate_min(self, value):
@@ -462,7 +462,7 @@ class IntegerFilter(TypedFilter):
 
 class DoubleFilter(IntegerFilter):
     # this isn't a thing in python, but whatever
-    TYPE = Types.DOUBLE
+    TYPE = Type.DOUBLE
 
 
 # alias Numeric to Double, these are the same concept in python
@@ -470,35 +470,35 @@ NumericFilter = DoubleFilter
 
 
 class DateFilter(TypedFilter):
-    TYPE = Types.DATE
+    TYPE = Type.DATE
 
     OPERATORS = (
-        Operators.unary_comparisons
-        | Operators.binary_comparisons
-        | Operators.ternary_comparisons
+        Operator.unary_comparisons
+        | Operator.binary_comparisons
+        | Operator.ternary_comparisons
     )
 
     # TODO add default validator
 
 
 class TimeFilter(TypedFilter):
-    TYPE = Types.TIME
+    TYPE = Type.TIME
 
     OPERATORS = (
-        Operators.unary_comparisons
-        | Operators.binary_comparisons
-        | Operators.ternary_comparisons
+        Operator.unary_comparisons
+        | Operator.binary_comparisons
+        | Operator.ternary_comparisons
     )
     # TODO add default validator
 
 
 class DateTimeFilter(TypedFilter):
-    TYPE = Types.DATETIME
+    TYPE = Type.DATETIME
 
     OPERATORS = (
-        Operators.unary_comparisons
-        | Operators.binary_comparisons
-        | Operators.ternary_comparisons
+        Operator.unary_comparisons
+        | Operator.binary_comparisons
+        | Operator.ternary_comparisons
     )
 
     # TODO add default validator

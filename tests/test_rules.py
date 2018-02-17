@@ -5,8 +5,11 @@ from __future__ import absolute_import
 # Standard Library
 from collections import namedtuple
 
+import pytest
+
 # Project Library
 from querybuilder import filters
+from querybuilder.exceptions import ValidationError
 from querybuilder.rules import Rule
 from tests import fixture
 
@@ -210,3 +213,143 @@ scenario = fixture(
 def test_a_rule(scenario):
     filters = SomeFilters(item=scenario.item)
     assert scenario.is_valid == scenario.rule.is_valid(filters, verbose=True), scenario.reason
+
+SerializationScenario = namedtuple('SerializationScenario', ('is_valid', 'rule', 'comparison_rule'))
+
+empty_rule = Rule({'empty': True})
+no_group_rule = Rule({
+    "id": "value",
+    "field": "value",
+    "type": "string",
+    "input": "text",
+    "operator": "equal",
+    "value": "something"
+})
+group_only_rule = Rule({
+    "condition": "AND",
+    "rules": [],
+})
+
+
+serialization = fixture(
+    autoparam=True,
+    params=(
+        SerializationScenario(PASS, rule_1, rule_1),
+        SerializationScenario(PASS, rule_2, rule_2),
+        SerializationScenario(PASS, empty_rule, empty_rule),
+        SerializationScenario(PASS, no_group_rule, no_group_rule),
+        SerializationScenario(PASS, group_only_rule, group_only_rule),
+
+        SerializationScenario(FAIL, rule_1, rule_2),
+        SerializationScenario(FAIL, no_group_rule, group_only_rule),
+        SerializationScenario(FAIL, no_group_rule, empty_rule),
+        SerializationScenario(FAIL, group_only_rule, empty_rule),
+        SerializationScenario(FAIL, rule_1, no_group_rule),
+        SerializationScenario(FAIL, rule_1, empty_rule),
+        SerializationScenario(FAIL, rule_1, group_only_rule),
+    )
+)
+
+
+def test_serialization(serialization):
+    assert serialization.is_valid == (serialization.rule == Rule.loads(serialization.comparison_rule.dumps()))
+
+
+ValidationScenario = namedtuple('ValidationScenario', ('is_valid', 'rule'))
+
+validation = fixture(
+    autoparam=True,
+    params=(
+        ValidationScenario(FAIL, {'incorrect': 'data'}),
+        ValidationScenario(FAIL, {}),
+
+        # Test missing and invalid group fields
+        ValidationScenario(FAIL, {'condition': 'fake', 'rules': []}),
+        ValidationScenario(FAIL, {'condition': 'AND'}),
+        ValidationScenario(FAIL, {'rules': []}),
+        ValidationScenario(FAIL, {'condition': 'AND', 'rules': 'hu'}),
+        ValidationScenario(FAIL, {'condition': 'AND', 'rules': ['wat']}),
+        ValidationScenario(FAIL, {'condition': 'AND', 'rules': [{}]}),
+        ValidationScenario(FAIL, {'condition': 'AND', 'rules': [{'id': 'hi'}]}),
+
+        # Test missing and invalid rule fields
+        ValidationScenario(
+            FAIL,
+            {'id': 'name', 'field': 'name', 'type': 'string', 'input': 'text', 'operator': 'equal'},
+        ),
+        ValidationScenario(
+            FAIL,
+            {'id': 'name', 'field': 'name', 'type': 'string', 'input': 'text', 'value': 'henry'},
+        ),
+        ValidationScenario(
+            FAIL,
+            {'id': 'name', 'field': 'name', 'type': 'string', 'operator': 'equal', 'value': 'henry'},
+        ),
+        ValidationScenario(
+            FAIL,
+            {'id': 'name', 'field': 'name', 'input': 'text', 'operator': 'equal', 'value': 'henry'},
+        ),
+        ValidationScenario(
+            FAIL,
+            {'id': 'name', 'type': 'string', 'input': 'text', 'operator': 'equal', 'value': 'henry'},
+        ),
+        ValidationScenario(
+            FAIL,
+            {'field': 'name', 'type': 'string', 'input': 'text', 'operator': 'equal', 'value': 'henry'},
+        ),
+
+        ValidationScenario(
+            FAIL,
+            {'id': 'name', 'field': 'name', 'type': 'fake_type', 'input': 'text', 'operator': 'equal', 'value': 'henry'},
+        ),
+        ValidationScenario(
+            FAIL,
+            {'id': 'name', 'field': 'name', 'type': 'string', 'input': 'fake_input', 'operator': 'equal', 'value': 'henry'},
+        ),
+        ValidationScenario(
+            FAIL,
+            {'id': 'name', 'field': 'name', 'type': 'string', 'input': 'text', 'operator': 'fake_operator', 'value': 'henry'},
+        ),
+
+        ValidationScenario(PASS, {'empty': True}),
+        ValidationScenario(PASS, {'condition': 'OR', 'rules': []}),
+        ValidationScenario(
+            PASS,
+            {
+                'id': 'name',
+                'field': 'name',
+                'type': 'string',
+                'input': 'text',
+                'operator': 'equal',
+                'value': 'henry',
+            },
+        ),
+        ValidationScenario(
+            PASS,
+            {
+                'condition': 'OR',
+                'rules': [
+                    {
+                        'condition': 'AND',
+                        'rules': [{
+                            'id': 'name',
+                            'field': 'name',
+                            'type': 'string',
+                            'input': 'text',
+                            'operator': 'equal',
+                            'value': 'henry',
+                        }],
+                    },
+                ],
+            },
+        ),
+    ),
+)
+
+
+def test_validation(validation):
+    if not validation.is_valid:
+        with pytest.raises(ValidationError):
+            Rule(validation.rule)
+    else:
+        Rule(validation.rule)

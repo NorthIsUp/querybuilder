@@ -9,12 +9,13 @@ from logging import getLogger
 import sys
 
 from querybuilder.constants import (
-    Conditions,
-    Inputs,
-    Operators,
-    Types,
+    Condition,
+    Input,
+    Operator,
+    Type,
 )
 from querybuilder.core import ToDictMixin
+from querybuilder.exceptions import ValidationError
 
 logger = getLogger(__name__)
 
@@ -68,6 +69,9 @@ class Validation(ToDictMixin):
 
 
 class Rule(object):
+    rule_fields = set(['id', 'field', 'input', 'operator', 'type', 'value'])
+    group_fields = set(['condition', 'rules'])
+
     def __init__(self, rule):
         '''
         Args:
@@ -76,24 +80,33 @@ class Rule(object):
             inputs: Enum of inputs, this allows for adding custom inputs
             types: Enum of types, this allows for adding custom types
         '''
+        if not isinstance(rule, dict):
+            raise ValidationError('Rule must be a dictionary')
 
         self.is_group = False
         self.is_empty = False  # note that an empty rule evaluates as true
 
-        if rule.get('empty'):
-            # some rules
-            self.is_empty = True
-        elif 'condition' and 'rules' in rule:
-            self.is_group = True
-            self.condition = Conditions(rule['condition'])
-            self.rules = [Rule(rule) for rule in rule['rules']]
-        else:
-            self.id = rule['id']
-            self.field = rule['field']
-            self.input = Inputs(rule['input'])
-            self.operator = Operators(rule['operator'])
-            self.type = Types(rule['type'])
-            self.value = rule['value']
+        try:
+            if rule.get('empty'):
+                # some rules
+                self.is_empty = True
+            elif self.group_fields.issubset(rule):
+                self.is_group = True
+                self.condition = Condition(rule['condition'])
+                if not isinstance(rule['rules'], list):
+                    raise ValidationError('\'rules\' must be a list')
+                self.rules = [Rule(rule) for rule in rule['rules']]
+            elif self.rule_fields.issubset(rule):
+                self.id = rule['id']
+                self.field = rule['field']
+                self.input = Input(rule['input'])
+                self.operator = Operator(rule['operator'])
+                self.type = Type(rule['type'])
+                self.value = rule['value']
+            else:
+                raise ValidationError('Rule did not contain required fields')
+        except ValueError as e:
+            raise ValidationError(e.message)
 
     def __repr__(self, value=None):
         parens = '()' if value is None else '({})'.format(value)
@@ -103,6 +116,54 @@ class Rule(object):
             return 'Rule{p}'.format(p=parens)
         else:
             return 'Rule({s.id}{p} {s.operator} {s.value})'.format(s=self, p=parens)
+
+    def dumps(self):
+        """
+        Converts the rule to a json string.
+        :return: string
+        """
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        converted = {}
+        if self.is_empty:
+            converted['empty'] = True
+        elif self.is_group:
+            converted['condition'] = self.condition.value
+            converted['rules'] = [rule.to_dict() for rule in self.rules]
+        else:
+            converted['id'] = self.id
+            converted['field'] = self.field
+            converted['input'] = self.input.value
+            converted['operator'] = self.operator.value
+            converted['type'] = self.type.value
+            converted['value'] = self.value
+
+        return converted
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return False
+
+        if not (self.is_empty == other.is_empty and self.is_group == other.is_group):
+            return False
+
+        if self.is_empty:
+            return True
+        elif self.is_group:
+            return (
+                self.condition == other.condition
+                and self.rules == other.rules
+            )
+        else:
+            return (
+                self.id == other.id
+                and self.field == other.field
+                and self.input == other.input
+                and self.operator == other.operator
+                and self.type == other.type
+                and self.value == other.value
+            )
 
     @classmethod
     def loads(cls, string, ensure_list=False):
@@ -117,8 +178,8 @@ class Rule(object):
 
     # how to convert a rule's condition to a python type
     python_conditions = {
-        Conditions.AND: all,
-        Conditions.OR: any,
+        Condition.AND: all,
+        Condition.OR: any,
     }
 
     def is_valid(self, filters, indent=0, verbose=False):

@@ -13,7 +13,7 @@ from datetime import (
 import pytest
 
 # Project Library
-from querybuilder.constants import Operators
+from querybuilder.constants import Operator
 from querybuilder.filters import (
     BooleanFilter,
     DateFilter,
@@ -53,7 +53,7 @@ class BaseFilter(object):
     def skip_if_not_applicable(self, request):
         # this filter will skip the test if the filter doesn't respond to the operator being tested
         op_name = request.node.originalname[len('test_Operators_'):].upper()
-        op = getattr(Operators, op_name)
+        op = getattr(Operator, op_name)
         if op not in self.FILTER.OPERATORS:
             pytest.skip('{} does not respond to {}'.format(self.FILTER, op))
 
