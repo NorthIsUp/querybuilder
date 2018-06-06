@@ -22,7 +22,7 @@ Generator and Parser for the jQuery Query Builder library.
 
 
 * Free software: MIT license
-* Documentation: https://querybuilder.readthedocs.io.
+* Documentation: https://querybuilder.js.org
 
 
 Features
