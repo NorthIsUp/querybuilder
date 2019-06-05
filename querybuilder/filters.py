@@ -51,7 +51,11 @@ class Filters(object):
             return False, filter_operand
 
         # get the value set in the rule
-        rule_operand = filter.python_value(rule.value)
+        rule_value = rule.value
+        if isinstance(rule_value, (list, tuple)):
+            rule_operand = [filter.python_value(val) for val in rule_value]
+        else:
+            rule_operand = filter.python_value(rule_value)
 
         # get the operator we are going to test with
         operator_handler = filter.handler_for_operator(rule.operator)
