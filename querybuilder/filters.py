@@ -60,12 +60,16 @@ class Filters(object):
         # get the operator we are going to test with
         operator_handler = filter.handler_for_operator(rule.operator)
 
-        if isinstance(rule_operand, (list, tuple)):
-            # allow for syntax like def between(self, value, upper, lower)
-            return operator_handler(filter, filter_operand, *rule_operand), filter_operand
-        else:
-            return operator_handler(filter, filter_operand, rule_operand), filter_operand
 
+        if rule_operand:
+            if isinstance(rule_operand, (list, tuple)):
+                # allow for syntax like def between(self, value, upper, lower)
+                return operator_handler(filter, filter_operand, *rule_operand), filter_operand
+            else:
+                return operator_handler(filter, filter_operand, rule_operand), filter_operand
+        else:
+            # allow for is null, is not null
+            return operator_handler(filter, filter_operand), filter_operand
 
 class FilterMeta(type):
     '''
