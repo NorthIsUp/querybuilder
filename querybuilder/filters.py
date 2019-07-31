@@ -61,7 +61,7 @@ class Filters(object):
         operator_handler = filter.handler_for_operator(rule.operator)
 
 
-        if rule_operand:
+        if rule_operand is not None:
             if isinstance(rule_operand, (list, tuple)) and rule.operator != Operator.IN and rule.operator != Operator.NOT_IN:
                 # allow for syntax like def between(self, value, upper, lower)
                 return operator_handler(filter, filter_operand, *rule_operand), filter_operand
