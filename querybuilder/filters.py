@@ -246,7 +246,8 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
 
         Filter._filter_registry[self.id] = self
 
-        return cached_property(func)
+        return func
+        # return cached_property(func)
 
     @classmethod
     def all_filters(cls):
