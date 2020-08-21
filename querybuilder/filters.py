@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 
 # Standard Library
+from builtins import str
+from builtins import object
 import re
 from datetime import (
     date,
@@ -80,7 +82,7 @@ class FilterMeta(type):
     def __new__(metacls, name, bases, attrs):
         cls = super(FilterMeta, metacls).__new__(metacls, name, bases, attrs)
 
-        for name, attr in attrs.items():
+        for name, attr in list(attrs.items()):
 
             if hasattr(attr, 'operator'):
                 # check for for the `operator` attribute that is set in Operator.handles
@@ -255,7 +257,7 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
         return [
             filter.to_dict()
             for filter
-            in cls._filter_registry.values()
+            in list(cls._filter_registry.values())
         ]
 
     @classmethod
@@ -316,6 +318,9 @@ class Filter(six.with_metaclass(FilterMeta, ToDictMixin)):
 
     @Operator.LESS.handles
     def less(self, lop, rop):
+        if lop is None: #python3 comparison changes
+            return False
+
         return lop < rop
 
     @Operator.LESS_OR_EQUAL.handles
@@ -367,7 +372,7 @@ class TypedFilter(Filter):
             kwargs.setdefault('operators', tuple(self.OPERATORS))
 
         if self.OPTIONS is not NotImplemented:
-            for k, v in self.OPTIONS.items():
+            for k, v in list(self.OPTIONS.items()):
                 kwargs.setdefault(k, v)
 
         super(TypedFilter, self).__init__(*args, **kwargs)
@@ -513,4 +518,4 @@ class DateTimeFilter(TypedFilter):
     # TODO add default validator
 
 
-__all__ = [_.__name__ for _ in globals().values() if isinstance(_, (Filter, Filters))]
+__all__ = [_.__name__ for _ in list(globals().values()) if isinstance(_, (Filter, Filters))]

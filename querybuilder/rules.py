@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 # Standard Library
+from builtins import object
 import json
 from logging import getLogger
 

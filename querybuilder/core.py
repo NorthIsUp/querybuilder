@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 
+from builtins import object
 class ToDictMixin(object):
 
     DICT_KEYS = NotImplementedError
